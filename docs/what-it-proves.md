@@ -5,11 +5,18 @@ description: A plain-language explanation of QuietProof’s proof of key control
 
 # What QuietProof proves
 
-QuietProof lets one person demonstrate to another:
+In its challenge-bound P2WPKH workflow, QuietProof lets one person demonstrate to another:
 
 > I know the spend key that matches this specified Bitcoin output, and I am answering your fresh request now.
 
 The holder does not need to move the bitcoin. The proof reveals neither the private key nor the compressed public key, and it is not a Bitcoin-valid signature that can be reused elsewhere.
+
+For legacy [P2SH 2-of-3 multisig](/guide/p2sh-multisig), two signers can instead
+prove their keys independently. The auditor verifies two proofs for different
+positions in the same hidden script, matched to its expected on-chain hash.
+That establishes sufficient signing capability without revealing the script
+or public keys. These separate static proofs do not answer a fresh challenge,
+check current funds, or establish that two independent people hold the keys.
 
 ## The idea without the cryptography
 

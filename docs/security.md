@@ -46,3 +46,18 @@ system, circuit implementation, parameter generation, nonce-store atomicity,
 Bitcoin provider/snapshot/finality policy, and any bridge lock and mint
 system.  No row in this document turns those external assumptions into a
 cryptographic guarantee.
+
+## Independent P2SH 2-of-3 extension
+
+The [multisig specification](/technical/p2sh-multisig) describes the separate
+`QPM1` relation. The P2WPKH v1 challenge/replay/evidence policies above are not
+part of this static multisig format.
+
+| Claim / attack | Enforcement | Evidence | Limit |
+| --- | --- | --- | --- |
+| A valid scalar derives exactly the selected script key. | Reused `KeyOwnershipCircuit`; bytewise equality to the circuit-selected compressed key. | `p2sh_multisig_test`: actual compiled-circuit evaluation, six same-scalar/other-position attempts; scalar/trace mutation; `n+1` alias; real low-level forged-proof attempt. | Discrete-log and proof-system knowledge-soundness assumptions. |
+| The public position is in range and bound to selection. | Bit selectors, one-hot sum, `i = s1 + 2*s2`, 33 selected-byte equalities. | Invalid field/byte positions, non-bit/non-one-hot selectors, relabeled real proofs. | Position is disclosed and linkable. |
+| All keys are valid and pairwise distinct. | Curve equations; canonical coordinates; three compressed-key inequality constraints. | Consistently encoded off-curve point; noncanonical coordinate alias; all duplicate pairs; opposite-parity valid pair. | Different SEC keys do not imply different people or unrelated secrets. |
+| The exact script hashes to the public P2SH hash. | Circuit-built 105-byte serialization, two chained SHA blocks, fixed padding/length, RIPEMD-160, public-byte equality. | Rehashed altered scripts; schedules, chaining states, alternate padding and lengths; independent bitcoinjs-lib/OpenSSL cross-check. | HASH160 binding is computational; chosen collisions have a generic 80-bit bound. |
+| Two proofs establish sufficient capability for the intended hash. | `P2shVerifyPair`: both proofs valid, expected hash equal, positions different. | Real proofs for all three valid pairs, repeated positions and mismatched/tampered hashes rejected. | Auditor must obtain the expected hash independently; no current UTXO or freshness check. |
+| Proof inputs, family and wire format are bound. | Pinned circuit digest, separate transcript domains, public circuit inputs, bounded strict `QPM1` parser. | Tampered proof/statement/digest, truncated/oversized-length/trailing encodings, real proof relabeling. | Static proofs are intentionally replayable; no challenge or custodian identity binding. |

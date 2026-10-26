@@ -12,7 +12,7 @@ export default defineConfig({
   title: "QuietProof",
   titleTemplate: ":title · QuietProof",
   description:
-    "Prove control of P2WPKH bitcoin without revealing private keys or compressed public keys.",
+    "Prove key control for P2WPKH and canonical P2SH 2-of-3 bitcoin without revealing public keys.",
   cleanUrls: true,
   lastUpdated: true,
   head: [
@@ -92,6 +92,7 @@ export default defineConfig({
           { text: "Guide overview", link: "/guide/" },
           { text: "How a proof works", link: "/guide/how-it-works" },
           { text: "Auditor workflow", link: "/guide/auditor-workflow" },
+          { text: "Independent P2SH multisig", link: "/guide/p2sh-multisig" },
           { text: "Build and try it", link: "/guide/getting-started" },
           { text: "Operations", link: "/operations" },
         ],
@@ -102,6 +103,7 @@ export default defineConfig({
         items: [
           { text: "Architecture", link: "/technical/architecture" },
           { text: "PoKC circuit", link: "/technical/pokc" },
+          { text: "P2SH 2-of-3 circuit", link: "/technical/p2sh-multisig" },
           { text: "Normative v1 protocol", link: "/technical/protocol" },
           { text: "Sage reference model", link: "/technical/sage" },
           { text: "Security claim matrix", link: "/security" },

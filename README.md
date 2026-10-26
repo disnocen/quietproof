@@ -15,6 +15,37 @@ Recipients can trace these coins and associate them with a known prover identity
 Discovery sends the address to the selected node. This is not proof of exclusive
 ownership, legal title, solvency or locked collateral.
 
+QuietProof also supports **independent P2SH 2-of-3 multisig key-control proofs**.
+Each signer proves knowledge of its own scalar at a public script position,
+using only that scalar and the common 105-byte compressed-key redeem script.
+The auditor verifies any two proofs against the expected on-chain P2SH hash
+and requires distinct positions. Public keys and the redeem script stay private.
+The unified circuit enforces scalar/point validity, one-hot position selection,
+derived-key equality, pairwise-distinct keys, canonical script construction and
+its complete HASH160. No private-key sharing, MPC or joint proof is needed.
+
+This separate `QPM1` proof family preserves existing PoKC v1 compatibility.
+It proves spending capability, with no claim of independent custodian identity,
+freshness, current UTXO state, availability, or willingness to sign. These static
+multisig proofs are replayable. See the [technical specification](docs/technical/p2sh-multisig.md),
+[step-by-step guide](docs/guide/p2sh-multisig.md), and
+[performance comparison](docs/performance.md#independent-p2sh-2-of-3).
+
+```sh
+# Disposable random demo: three separate keygens, two independent proofs.
+# Requires npm ci and the existing sibling vite-theme dependency.
+scripts/run_p2sh_demo.sh build/quietproof
+# Each call reads only that signer's scalar from protected stdin:
+build/quietproof p2sh prove --redeem-script redeem.hex --position 0 --output signer0.qpm
+build/quietproof p2sh prove --redeem-script redeem.hex --position 2 --output signer2.qpm
+build/quietproof p2sh verify --proof-a signer0.qpm --proof-b signer2.qpm --hash "$HASH"
+```
+
+`HASH` is the auditor's independently obtained 40-character hexadecimal P2SH hash.
+The demo constructs an unfunded reference script locally. For the new automated
+constraints, real proofs, and independent Bitcoin cross-check, run
+`ctest --test-dir build --output-on-failure -R '^p2sh-'` after `npm ci`.
+
 ## Build
 
 Use a C++20 compiler, CMake 3.20+, the installed

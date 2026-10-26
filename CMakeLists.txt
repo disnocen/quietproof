@@ -129,6 +129,16 @@ if(BUILD_TESTING)
       LABELS "bitcoin-regtest;proof-heavy" SKIP_RETURN_CODE 77)
   endif()
   add_pokc_test(pokc-test tests/quietproof/pokc_test.cc)
+  add_pokc_test(p2sh-multisig-test tests/quietproof/p2sh_multisig_test.cc)
+  add_test(NAME p2sh-multisig-proof-test COMMAND p2sh-multisig-test --proofs)
+  set_tests_properties(p2sh-multisig-proof-test PROPERTIES
+    LABELS "proof-heavy" RUN_SERIAL TRUE TIMEOUT 1800)
+  find_program(QUIETPROOF_NODE_EXECUTABLE node)
+  if(QUIETPROOF_NODE_EXECUTABLE)
+    add_test(NAME p2sh-bitcoin-reference-test COMMAND ${QUIETPROOF_NODE_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/tests/quietproof/p2sh_reference.mjs $<TARGET_FILE:p2sh-multisig-test>)
+    set_tests_properties(p2sh-bitcoin-reference-test PROPERTIES SKIP_RETURN_CODE 77)
+  endif()
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests/results")
   set_tests_properties(pokc-test PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")

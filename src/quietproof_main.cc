@@ -44,6 +44,7 @@
 #include "quietproof/envelope.h"
 #include "quietproof/nonce_store.h"
 #include "pokc/prover.h"
+#include "pokc/p2sh_multisig.h"
 #include "quietproof/verifier.h"
 #include "cli/json.hpp"
 
@@ -77,6 +78,8 @@ void PrintUsage(std::ostream& output) {
       << "    Native RPC is default; --bitcoin-cli /ABSOLUTE/PATH explicitly "
          "selects the deprecated legacy verifier.\n"
       << "  quietproof inspect FILE\n"
+      << "  quietproof p2sh prove --redeem-script FILE --position 0|1|2 --output PROOF\n"
+      << "  quietproof p2sh verify --proof-a FILE --proof-b FILE --hash HASH160_HEX\n"
       << "networks: mainnet, testnet3 (alias testnet), testnet4, signet, regtest\n"
       << "RPC OPTIONS: --rpc-url URL --rpc-cookie FILE --rpc-datadir DIR "
          "--rpc-timeout SECONDS --rpc-scan-timeout SECONDS --rpc-wallet NAME\n"
@@ -785,6 +788,65 @@ int Inspect(const std::string& path) {
   return 0;
 }
 
+int P2shCommand(int argc, char** argv) {
+  if (argc < 3) return Usage();
+  const std::string command = argv[2];
+  Options options;
+  if (command == "prove") {
+    std::string script_path, position_text, output;
+    uint64_t position;
+    if (!ParseOptions(argc, argv, 3, {"--redeem-script", "--position", "--output"}, &options) ||
+        !One(options, "--redeem-script", &script_path) || !One(options, "--position", &position_text) ||
+        !One(options, "--output", &output) || !ParseU64(position_text, &position) || position > 2)
+      return Usage();
+    if (!CheckNewOutputPath(output)) return kIoError;
+    std::vector<uint8_t> file;
+    if (!ReadBounded(script_path, 211, &file)) return kIoError;
+    if (!file.empty() && file.back() == '\n') file.pop_back();
+    std::string hex(file.begin(), file.end());
+    proofs::P2shScript script{};
+    const bool parsed = HexArray(hex, &script);
+    SecureErase(hex.data(), hex.size()); SecureErase(file.data(), file.size());
+    if (!parsed) return kData;
+    std::vector<proofs::P2shSecret> secrets;
+    if (!ReadSecrets(1, &secrets)) { EraseSecrets(&secrets); return kData; }
+    proofs::P2shMultisigProof proof;
+    bool proved = false;
+    {
+      quietproof_cli::ProofProgress reporter(std::cerr);
+      reporter.SetPhase("P2SH independent proof");
+      proved = proofs::P2shProve(secrets[0], script, static_cast<uint8_t>(position), &proof);
+    }
+    EraseSecrets(&secrets); SecureErase(script.data(), script.size());
+    if (!proved) return kData;
+    std::vector<uint8_t> wire;
+    if (!proofs::EncodeP2shProof(proof, &wire)) return kSoftware;
+    if (!WriteNewFileAtomic(output, wire)) return kIoError;
+    std::cout << nlohmann::json({{"format", "quietproof-p2sh-2of3-v1"},
+                               {"hash", ArrayHex(proof.hash)}, {"position", proof.position},
+                               {"proof_bytes", proof.bytes.size()}}).dump() << '\n';
+    return 0;
+  }
+  if (command == "verify") {
+    std::string path_a, path_b, hash_text;
+    proofs::P2shHash hash{};
+    if (!ParseOptions(argc, argv, 3, {"--proof-a", "--proof-b", "--hash"}, &options) ||
+        !One(options, "--proof-a", &path_a) || !One(options, "--proof-b", &path_b) ||
+        !One(options, "--hash", &hash_text) || !HexArray(hash_text, &hash)) return Usage();
+    proofs::P2shMultisigProof a, b;
+    for (const auto& item : {std::make_pair(path_a, &a), std::make_pair(path_b, &b)}) {
+      std::vector<uint8_t> bytes;
+      if (!ReadBounded(item.first, proofs::kP2shMaxProofBytes + proofs::kP2shHeaderBytes, &bytes))
+        return kIoError;
+      if (!proofs::DecodeP2shProof(bytes, item.second)) return kData;
+    }
+    const bool valid = proofs::P2shVerifyPair(a, b, hash);
+    std::cout << nlohmann::json({{"valid", valid}, {"hash", ArrayHex(hash)}}).dump() << '\n';
+    return valid ? 0 : kData;
+  }
+  return Usage();
+}
+
 }  // namespace
 
 int QuietProofMain(int argc, char** argv) {
@@ -803,6 +865,7 @@ int QuietProofMain(int argc, char** argv) {
   if (argc >= 3 && std::string(argv[1]) == "challenge" &&
       std::string(argv[2]) == "create") return ChallengeCreate(argc, argv);
   if (argc >= 2 && std::string(argv[1]) == "utxos") return Utxos(argc, argv);
+  if (argc >= 2 && std::string(argv[1]) == "p2sh") return P2shCommand(argc, argv);
   if (argc >= 2 && std::string(argv[1]) == "prove") return Prove(argc, argv);
   if (argc >= 3 && std::string(argv[1]) == "verify") return Verify(argc, argv);
   if (argc == 3 && std::string(argv[1]) == "inspect") return Inspect(argv[2]);

@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feature/independent-p2sh-2of3]
   workflow_dispatch:
 
 permissions:
@@ -68,6 +68,24 @@ jobs:
           ctest --test-dir build --output-on-failure --no-tests=error
           --parallel 1 --timeout 1800
           -E '^quietproof-regtest-rpc-test$'
+      - uses: actions/setup-node@v6
+        if: matrix.rpc == 'ON'
+        with:
+          node-version: 24
+      - uses: actions/checkout@v7
+        if: matrix.rpc == 'ON'
+        with:
+          repository: LuganoPlanB/vite-theme
+          ref: a7fde3404a5e2b32bf57b4bcb99337479c5c75b2
+          path: vite-theme
+          persist-credentials: false
+      - name: Independent Bitcoin serialization and CLI proof demo
+        if: matrix.rpc == 'ON'
+        working-directory: quietproof
+        run: |
+          npm ci
+          node tests/quietproof/p2sh_reference.mjs ../build/p2sh-multisig-test
+          scripts/run_p2sh_demo.sh ../build/quietproof
       - name: Run offline compatibility tests
         if: matrix.rpc == 'OFF'
         run: >-

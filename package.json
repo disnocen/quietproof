@@ -10,6 +10,7 @@
     "test:site": "node --test tests/site.test.mjs"
   },
   "devDependencies": {
+    "bitcoinjs-lib": "7.0.1",
     "lugano-planb-vite-theme": "file:../vite-theme",
     "vitepress": "1.6.4",
     "vue": "3.5.42"

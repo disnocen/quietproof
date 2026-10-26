@@ -28,4 +28,9 @@ are available separately. Please contact us for further information.
 
 ## Operate it carefully
 
+For legacy 2-of-3 P2SH scripts, use the [independent multisig walkthrough](/guide/p2sh-multisig).
+It covers separate custodian proofs and auditor verification without revealing
+the redeem script or public keys. Its static attestations have different
+freshness and on-chain-state limits from the P2WPKH challenge workflow.
+
 [Operations and production controls](/operations) documents Bitcoin network selection, Bitcoin Core isolation, nonce handling, audit logging, resource controls, and the release gate.

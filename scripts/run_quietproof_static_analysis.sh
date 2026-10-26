@@ -37,6 +37,7 @@ readonly translation_units=(
   tests/quietproof/protocol_test.cc
   tests/quietproof/integration_test.cc
   tests/quietproof/pokc_sage_vector_test.cc
+  tests/quietproof/p2sh_multisig_test.cc
   src/quietproof_main.cc
 )
 
@@ -79,6 +80,7 @@ cppcheck \
   src/quietproof_main.cc
 
 shellcheck tests/quietproof/cli_test.sh \
+  scripts/run_p2sh_demo.sh \
   scripts/run_pokc_sage.sh \
   scripts/run_quietproof_static_analysis.sh
 printf 'QuietProof static analysis passed\n'

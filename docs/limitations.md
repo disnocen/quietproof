@@ -7,6 +7,12 @@ description: What QuietProof does not establish and what a safe integration must
 
 This page is the short operational boundary. The [security claim matrix](/security) maps every claim to its enforcing component, tests, and residual limitation.
 
+The challenge and Bitcoin-evidence discussion below concerns the P2WPKH v1
+workflow. The separate [P2SH 2-of-3 extension](/technical/p2sh-multisig)
+proves static signing-key capability only: it has no challenge, expiration,
+replay prevention, UTXO lookup, or freshness guarantee. It also cannot prove
+independent key generation or real-world custodian independence.
+
 ::: warning
 This is free and open source software provided without warranty under
 the terms of the GNU GPL v3 license. Professional support,

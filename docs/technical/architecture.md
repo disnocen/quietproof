@@ -72,3 +72,19 @@ The repository includes:
 - a claim-by-claim security review map.
 
 These are evidence for review, not a substitute for an independent cryptographic and protocol audit.
+
+## Independent P2SH multisig family
+
+The [P2SH 2-of-3 circuit](/technical/p2sh-multisig) adds one independent key
+relation against a hidden script hash and a public script position. Each
+custodian invokes `P2shProve` separately; `P2shVerifyPair` verifies two proofs
+with distinct positions and the auditor's expected hash. This is one unified
+circuit per signer, with one scalar multiplication and all three private script
+points, rather than three key-knowledge relations or joint generation.
+
+`QPM1` serialization and transcript domains keep this family separate from
+P2WPKH v1. The circuit handles all key validity, selection, distinctness, script
+construction and HASH160 constraints. The pair verifier establishes static
+spending capability only. Challenge policies, replay prevention, RPC discovery,
+and current-funds authorization remain features of the existing P2WPKH v1
+workflow and are not implied for `QPM1`.
