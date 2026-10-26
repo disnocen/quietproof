@@ -13,6 +13,12 @@ gets only the proofs, the public positions, and the public P2SH hash. See the
 
 ## Build and generate a disposable demonstration
 
+For a narrated comparison with the original P2WPKH workflow, run
+`bash scripts/walkthrough.sh --bitcoin-bin /path/to/bitcoin/bin` after building
+the RPC-enabled CLI and running `npm ci`. It pauses for Enter between steps;
+the [interactive walkthrough instructions](./getting-started.md#compare-both-workflows-interactively)
+describe its isolated regtest setup, proof checks and replay demonstrations.
+
 Build QuietProof using the [existing SDK setup](./getting-started.md). From
 the repository root, with the pinned sibling `vite-theme` checkout required
 by the existing documentation package:

@@ -34,6 +34,50 @@ The executable is `build/quietproof`.
 
 ## Prepare an isolated regtest node
 
+For an automated, narrated comparison of both script types, use the interactive
+walkthrough below. The manual P2WPKH-only instructions continue after it.
+
+### Compare both workflows interactively
+
+With the RPC-enabled CLI built, `npm ci` completed, and Bitcoin Core 28+ binaries:
+
+```sh
+bash scripts/walkthrough.sh --bitcoin-bin /path/to/bitcoin-28.3/bin
+# Another build location:
+bash scripts/walkthrough.sh --quietproof /path/to/build/quietproof --bitcoin-bin /path/to/bitcoin/bin
+# Same real workflow without the reading pauses:
+bash scripts/walkthrough.sh --bitcoin-bin /path/to/bitcoin/bin --no-pause
+```
+
+The script pauses for **Enter between major steps**. Ctrl-C exits and stops only
+the node it started. It works from any current directory, automatically finding
+`build/quietproof` or `../build/quietproof` relative to the repository. It requires
+Bash and Node.js; it does not build dependencies or download Bitcoin Core.
+
+Three separate processes generate disposable random keypairs. The walkthrough
+shows compressed SEC bytes, SHA-256/HASH160, and readable `OP_` scripts, then
+funds one P2WPKH output and one canonical P2SH 2-of-3 output using a separate
+private regtest wallet. Custodian secrets are never imported into Core, printed,
+or passed in argv. Public keys/scripts are deliberately displayed for teaching;
+the actual proof files still hide them.
+
+The original workflow creates a challenge, proves with Core stopped, verifies
+current chain evidence, and rejects a replay. The new workflow creates two
+independent proofs at positions 0 and 2, extracts the expected P2SH hash from
+Core's real output, and verifies the pair. It demonstrates rejection of repeated
+positions, a wrong expected hash, and a tampered proof position. If the adjacent
+`p2sh-multisig-test` executable exists, it also runs raw compiled-circuit attacks
+that bypass native witness validation. Finally, it demonstrates that unchanged
+static `QPM1` proofs can be replayed, unlike the challenge-bound v1 workflow.
+
+The owner-only temporary directory is printed and retained, including disposable
+keys, requests, proofs, JSON chain evidence and logs. The node stops on exit;
+normal Bitcoin datadirs and wallets are never used. Reading pauses use a one-day
+demo challenge lifetime. Whole-CLI timing is shown for orientation; use the
+[performance reference](../performance.md) for controlled circuit measurements.
+
+### Manual P2WPKH setup
+
 This setup is node administration, separate from the ordinary QuietProof flow.
 It needs Bash, Python 3 for port/JSON conveniences, and explicit paths to
 `bitcoind` and `bitcoin-cli`. Neither Python nor `bitcoin-cli` is a native

@@ -80,6 +80,7 @@ cppcheck \
   src/quietproof_main.cc
 
 shellcheck tests/quietproof/cli_test.sh \
+  scripts/walkthrough.sh \
   scripts/run_p2sh_demo.sh \
   scripts/run_pokc_sage.sh \
   scripts/run_quietproof_static_analysis.sh
