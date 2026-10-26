@@ -17,7 +17,7 @@ usage() {
   cat <<'TEXT'
 Usage: bash scripts/walkthrough.sh [OPTIONS]
   --quietproof FILE  RPC-enabled quietproof executable (auto-detect build/ or ../build/)
-  --bitcoin-bin DIR Directory containing Bitcoin Core 28+ bitcoind and bitcoin-cli
+  --bitcoin-bin DIR Bitcoin Core 28+ binaries (auto-detect prepared Core or PATH)
   --no-pause        Run without the default "Press Enter" pauses
   --help            Show this help
 
@@ -46,17 +46,33 @@ if [[ -z $QP ]]; then
 fi
 [[ -n $QP && -x $QP ]] || die 'build QuietProof with RPC ON, or pass --quietproof FILE'
 QP=$(cd -- "$(dirname -- "$QP")" && pwd -P)/$(basename -- "$QP")
+core_supported() {
+  local directory=$1 version major
+  [[ -x $directory/bitcoind && -x $directory/bitcoin-cli ]] || return 1
+  version=$("$directory/bitcoind" --version 2>/dev/null) || return 1
+  major=$(printf '%s\n' "$version" | sed -n '1s/.*version v\([0-9][0-9]*\).*/\1/p')
+  [[ -n $major && $major -ge 28 ]]
+}
 if [[ -z $BITCOIN_BIN ]]; then
-  command -v bitcoind >/dev/null || die 'pass --bitcoin-bin /path/to/bitcoin/bin'
-  BITCOIN_BIN=$(dirname -- "$(command -v bitcoind)")
+  # Prefer the prepared, pinned demo binaries over an older system installation.
+  CORE_CANDIDATES=("$ROOT/../bitcoin-28.3/bin" "$ROOT/bitcoin-28.3/bin"
+    "$ROOT/../bitcoin-30.3/bin" "$ROOT/bitcoin-30.3/bin")
+  if command -v bitcoind >/dev/null; then
+    CORE_CANDIDATES+=("$(dirname -- "$(command -v bitcoind)")")
+  fi
+  for candidate in "${CORE_CANDIDATES[@]}"; do
+    if core_supported "$candidate"; then BITCOIN_BIN=$candidate; break; fi
+  done
+  [[ -n $BITCOIN_BIN ]] || die 'no supported Bitcoin Core pair found; pass --bitcoin-bin /path/to/bitcoin-28-or-newer/bin'
 fi
+[[ -d $BITCOIN_BIN ]] || die "Bitcoin binary directory does not exist: $BITCOIN_BIN"
 BITCOIN_BIN=$(cd -- "$BITCOIN_BIN" && pwd -P)
 BITCOIND=$BITCOIN_BIN/bitcoind
 BITCOIN_CLI=$BITCOIN_BIN/bitcoin-cli
 [[ -x $BITCOIND && -x $BITCOIN_CLI ]] || die '--bitcoin-bin must contain bitcoind and bitcoin-cli'
 CORE_VERSION=$("$BITCOIND" --version)
 CORE_MAJOR=$(printf '%s\n' "$CORE_VERSION" | sed -n '1s/.*version v\([0-9][0-9]*\).*/\1/p')
-[[ -n $CORE_MAJOR && $CORE_MAJOR -ge 28 ]] || die 'Bitcoin Core 28+ is required; select it with --bitcoin-bin'
+[[ -n $CORE_MAJOR && $CORE_MAJOR -ge 28 ]] || die "Bitcoin Core 28+ is required; $BITCOIND reports ${CORE_VERSION%%$'\n'*}. Select a supported pair with --bitcoin-bin"
 if ((PAUSE)) && [[ ! -t 0 ]]; then die 'interactive pauses need a terminal; use --no-pause for automation'; fi
 cd -- "$ROOT"
 node --input-type=module -e "await import('bitcoinjs-lib')" >/dev/null 2>&1 || die 'run npm ci in the repository first'
@@ -134,7 +150,7 @@ Keys and scripts shown here are disposable teaching material; never fund them.
 The demo deliberately shows PUBLIC keys/scripts so you can follow the hashes.
 The actual proof files do not disclose those public keys or the redeem script.
 TEXT
-printf '\nQuietProof: %s\nBitcoin: %s\n' "$QP" "${CORE_VERSION%%$'\n'*}"
+printf '\nQuietProof: %s\nBitcoin binary: %s\nBitcoin: %s\n' "$QP" "$BITCOIND" "${CORE_VERSION%%$'\n'*}"
 DEMO=$(mktemp -d "${TMPDIR:-/tmp}/quietproof-walkthrough.XXXXXX")
 mkdir "$DEMO/node" "$DEMO/old" "$DEMO/new"
 # Bind port zero to choose a free local RPC port; no default node is contacted.

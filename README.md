@@ -52,13 +52,15 @@ For an interactive comparison of the original P2WPKH and new P2SH workflows,
 build the RPC-enabled CLI, run `npm ci`, and use:
 
 ```sh
-bash scripts/walkthrough.sh --bitcoin-bin /path/to/bitcoin-28.3/bin
+bash scripts/walkthrough.sh
 ```
 
 It pauses for Enter between steps, generates disposable random keys, funds both
 script types on a fresh peerless regtest node, runs real proofs, and explains
 hashes, constraints, replay behavior and auditor checks. It stops its own node
-on exit and retains the private demo artifacts. Pass `--quietproof /path/to/build/quietproof`
+on exit and retains the private demo artifacts. It detects prepared Core 28.3/30.3
+binaries beside the repository, then checks PATH for a supported version. Pass
+`--bitcoin-bin /path/to/bitcoin/bin` to choose another installation, or `--quietproof /path/to/build/quietproof`
 for another build location or `--no-pause` for automation. See the
 [walkthrough instructions](docs/guide/getting-started.md#compare-both-workflows-interactively).
 

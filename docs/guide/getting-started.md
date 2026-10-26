@@ -42,6 +42,8 @@ walkthrough below. The manual P2WPKH-only instructions continue after it.
 With the RPC-enabled CLI built, `npm ci` completed, and Bitcoin Core 28+ binaries:
 
 ```sh
+bash scripts/walkthrough.sh
+# Explicit Core installation:
 bash scripts/walkthrough.sh --bitcoin-bin /path/to/bitcoin-28.3/bin
 # Another build location:
 bash scripts/walkthrough.sh --quietproof /path/to/build/quietproof --bitcoin-bin /path/to/bitcoin/bin
@@ -53,6 +55,10 @@ The script pauses for **Enter between major steps**. Ctrl-C exits and stops only
 the node it started. It works from any current directory, automatically finding
 `build/quietproof` or `../build/quietproof` relative to the repository. It requires
 Bash and Node.js; it does not build dependencies or download Bitcoin Core.
+For Core it first checks prepared `bitcoin-28.3/bin` and `bitcoin-30.3/bin`
+directories in or beside the repository, then PATH. Older PATH binaries are
+skipped. An explicit `--bitcoin-bin` is always respected, and startup prints the
+selected executable and version.
 
 Three separate processes generate disposable random keypairs. The walkthrough
 shows compressed SEC bytes, SHA-256/HASH160, and readable `OP_` scripts, then
